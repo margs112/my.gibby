@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For You</title>
+    <style>
+        /* --- GLOBAL STYLES & THEME --- */
+        :root {
+            --bg-image: url('margib.jpg'); 
+            --accent-color: #8b0000; /* Champagne Gold */
+            --text-light: #b22234;
+            --text-muted: #b22234;
+            --panel-bg: #fff;/* Glassmorphism tint */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), var(--bg-image);
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        h1, h2 {
+            font-family: "Playfair Display", "Georgia", serif;
+            font-weight: 400;
+            letter-spacing: 2px;
+            color: var(--accent-color);
+        }
+
+        /* --- CUTE & CLASSY ANIMATIONS --- */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 40px 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            animation: fadeIn 1s ease forwards;
+        }
+
+        .screen { display: none; width: 100%; justify-content: center; }
+        .screen.active { display: flex; }
+
+        /* --- INPUTS & INTERACTIVE BUTTONS --- */
+        input[type="text"] {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--text-muted);
+            color: var(--text-light);
+            font-size: 1.2rem;
+            padding: 10px;
+            text-align: center;
+            width: 80%;
+            margin-top: 25px;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border-color 0.4s ease;
+        }
+
+        input[type="text"]:focus { border-bottom: 1px solid var(--accent-color); }
+
+        button, .quiz-option {
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Playful bounce effect */
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 12px 35px;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            background: var(--accent-color);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+        }
+
+        /* --- QUIZ OPTIONS --- */
+        .quiz-container { margin-top: 25px; width: 100%; }
+        .quiz-option {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 14px;
+            margin: 10px 0;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .quiz-option:hover {
+            border-color: var(--accent-color);
+            background: rgba(214, 175, 85, 0.08);
+            transform: translateX(5px) scale(1.02);
+        }
+        #error-msg { color: #ef4444; font-size: 0.85rem; height: 20px; margin-top: 5px; }
+
+        /* --- 3D ENVELOPE FLIP STAGE --- */
+        .envelope-container {
+            perspective: 1000px;
+            width: 90%;
+            max-width: 450px;
+            height: 500px;
+            display: none;
+        }
+
+        .envelope-card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Front: Closed Envelope view */
+        .envelope-front, .envelope-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .envelope-front {
+            background: #fff;
+            border: 1px solid rgba(214, 175, 85, 0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            color: var(--accent-color);
+            padding: 30px;
+            text-align: center;
+        }
+
+        /* Wax seal stamp button animation */
+        .wax-seal {
+            font-size: 3.5rem;
+            margin-top: 30px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            animation: heartBeat 2s infinite;
+        }
+        .wax-seal:hover { transform: scale(1.2); }
+
+        @keyframes heartBeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* Back: Opened Paper view */
+        .envelope-back {
+            background: #faf9f6; /* Elegant textured paper color */
+            color: #1a1a1a;
+            transform: rotateY(180deg);
+            padding: 40px 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            justify-content: flex-start;
+        }
+
+        .letter-scroll-area {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            margin-top: 15px;
+            padding-right: 5px;
+        }
+
+        .letter-scroll-area::-webkit-scrollbar { width: 4px; }
+        .letter-scroll-area::-webkit-scrollbar-thumb { background: var(--accent-color); border-radius: 4px; }
+
+        .letter-text {
+            font-family: "Georgia", serif;
+            font-size: 1.05rem;
+            line-height: 1.8;
+            white-space: pre-line;
+            text-align: left;
+        }
+
+        /* Trigger state for the 3D spin */
+        .envelope-container.flipped .envelope-card {
+            transform: rotateY(180deg);
+        }
+
+        /* Floating Heart Sprites */
+        .heart-particle {
+            position: absolute;
+            color: rgba(214, 175, 85, 0.6);
+            font-size: 1.5rem;
+            pointer-events: none;
+            animation: floatUp var(--duration) linear forwards;
+        }
+
+        .typing-cursor::after {
+            content: '❤';
+            animation: blink 0.8s infinite;
+            color: var(--accent-color);
+            margin-left: 3px;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div id="screen-login" class="screen active">
+        <div class="glass-panel">
+            <h1 style="letter-spacing: 3px;">9 months of "us".</h1>
+            <p style="color: var(--text-muted); margin-top: 8px; font-size: 0.85rem; letter-spacing: 1px;">when did you confess to me?</p>
+            <input type="text" id="name-input" placeholder="ex: 010101" autocomplete="off">
+            <div id="error-msg"></div>
+            <button onclick="checkName()">Unlock</button>
+        </div>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div class="glass-panel">
+            <p style="color: var(--accent-color); text-transform: uppercase; letter-spacing: 2px; font-size: 0.75rem; margin-bottom: 5px;">looking back:)</p>
+            <h2 id="question-text">Question goes here?</h2>
+            <div class="quiz-container" id="choices-container"></div>
+        </div>
+    </div>
+
+    <div id="envelope-stage" class="envelope-container">
+        <div class="envelope-card">
+            
+            <div class="envelope-front">
+                <p style="letter-spacing: 3px; font-size: 0.8rem; color: var(--text-muted);">you pass!</p>
+                <h1 style="margin-top: 10px; font-size: 1.8rem;">9 Months of Us</h1>
+                <div class="wax-seal" onclick="openEnvelope()">💌</div>
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 15px;">Open my heart:)</p>
+            </div>
+
+            <div class="envelope-back" id="letter-card">
+                <h1 style="color: #1a1a1a; font-size: 2rem; margin-bottom: 5px;">happy 9 months, mister ko:)</h1>
+                <div style="width: 40px; height: 1px; background: var(--accent-color); margin-bottom: 10px;"></div>
+                
+                <div class="letter-scroll-area">
+                    <div id="typed-letter" class="letter-text typing-cursor"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const CORRECT_NAME = "101025"; // Change to his name
+
+        const LETTER_TEXT = `eme! no need na to open my heart, nasa loob na naman ikaw e! yiiihieeee kilig yan. 
+
+happy happppyyyyyy 9 months aking darling, can't believe umabot tayo dito ano? bebe, ikaw talaga. magllongmessage lang sana ako, pero may pa-ganun ka eh. alanagan namang magpatalo ako diba?
+
+una sa lahat bb, nasagutan mo ba yung mga tanong ko ha? siguro nagsearch ikaw. emeeee, its oki bebeeee! wala namang magbabago kung malimutan mo, ang mahalaga e mahal natin ang isa't-isa. di naman ang purpose nung quiz na yun bebe ay para i-test ka kung alala mo talaga. ang purpose po nun ay para matandaan, maalala, and ma-relive mo yung moments na yun. biruin mo bebe? ang tagal na simula nung nangyare lahat ng yun. lahat ng yun, 2025 pa. eh ano na ba ngayon? july na ng 2026 oh. hanggang ngayon mahal, hindi pa rin nagssink in sa akin na halos mag-iisang taon na tayo. 
+
+mahal, paulit-ulit ko tong sinasabi, pero hinding-hindi ako kailanman magsasawang sabihin to. palagi akong nagpapasalamat sa Diyos bb, dahil nilikha ka niya. higit pa ron, nilikha ka niya para sa akin. chariz! pero ako na nagddeclare. oo, para sa akin ka nilikha ni Lord. hindi man perpekto ang lahat sa pagitan nating dalawa bebe, kita ko pa rin na nagsisikap ka na buhayin palagi ang pagmamahalan nating dalawa. mahaaaaal na mahal na mahaaaaal kita, gib. sana, hindi lang hanggang dito. sana, may ihigit pa. sana yung 9 months ngayon, umabot sa 9 years, o kaya umabot sa magkasama tayo til we're 90 yrs old:) might be too much to ask for, pero im willing to do whatever it takes to get that.
+
+bb, ik these days, andami po nating pag-aaway. andami po nating pagtatalo. andami ko pong pagkukulang sa'yo. umabot na sa punto where my bebe doesnt feel seen anymore. umabot na sa punto na naipon nalang ang nararamdaman ng aking bb. bb, i hope you know that even my heart got broken when i found out that you were feeling that way. and mahal, what even hurt me more was that i am the cause of why you're hurting. i'm really, really sorry ulit mahal. im sorry i made you feel that way. pero hayaan mo akong bumawi ha? kitang kita mo naman now bb ko, nabawi ako noh! mahaaaal na mahal kaya kita bb. pasensya na rin kung ganito ako, kung maldita ako, kung madalas want ko ng time for myself, kung minsan ayaw ko na super clingy us n all, im sorry bb. pero i hope you understand din po bb na i want to enjoy my independence as well. nabanggit ko naman po before bb, na want ko po e we can live the life outside of us. na hindi lang po puro tayo. im sorry din po bb kung attitude po ako, kung gusto ko prinsesa po ako. pero ikaw po dapat magsorry e kasi ikaw naman nagspoil sa akin ng ganito. pero sige ako na magssorry. sorry bb kung ako lagi ang tama at ikaw lagi ang mali at sinasamba mo ako. sorry. 
+
+mahal, alam kong theres soooo much more to come pa. i hope we can become better. for ourselves, and for us. mahal, one thing po na narealize ko sa atin, and sa pag-oobserve po sa iba, sometimes po bb its better to let some things slide, or not turn it to a big deal anymore na po. kasi sa ganun po bb nagaaway lang po us e, e by the end of the day naman po bb, di naman po nagbago ang pagmamahal natin sa isa
+t-isa. sana unti-unti po natin matutunan yun. pati bb, may sarili pa rin naman po tayong buhay. may rights po tayo na magdesisyon para sa mga sarili natin.
+
+mahal, im rooting for you! ggraduate tayo ng magkasama sa dlsl okay? then ggraduate tayo sa up and ust! ik both of us can do that. we'll travel for some time, then once we're financially ready, once we have a biiiiiig big house na, a car, and all neccessities, let's get married bb:). it doesnt end there tho. lets be a loving husband and wife to each other, then lets die together. i love you, gib:) happy 9 months.`;
+
+        const triviaQuestions = [
+            {
+                question: "What song were we singing together on cam before you confessed?",
+                answers: ["Do I Wanna Know?", "Last Night on Earth", "Here with Me", "Huwag Kang Matakot"],
+                correct: 1
+            },
+            {
+                question: "What is the first food we ate together inside bm100?",
+                answers: ["Takoyaki", "Shawarma", "Cookies", "Tiramisu"],
+                correct: 3 
+            },
+            {
+                question: "When did we first hold hands?",
+                answers: ["10/21/25", "10/25/25", "10/23/25", "10/24/25"],
+                correct: 3
+            },
+{
+                question: "What event was I hosting when you confessed to me?",
+                answers: ["SereniDAY", "iLaya", "Eleventh Hour", "Peace Day"],
+                correct: 1
+            },
+{
+                question: "What was your first libre to me?",
+                answers: ["Buko Shake", "Cookies", "Flowers", "Ice Cream	"],
+                correct: 0
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+
+        // --- CUTE BACKGROUND SPARKLE SYSTEM ---
+        function spawnHearts() {
+            setInterval(() => {
+                const heart = document.createElement("div");
+                heart.className = "heart-particle";
+                heart.innerHTML = ["❤️", "✨", "💗"][Math.floor(Math.random() * 3)];
+                heart.style.left = Math.random() * 100 + "vw";
+                const duration = Math.random() * 3 + 4;
+                heart.style.setProperty("--duration", duration + "s");
+                document.body.appendChild(heart);
+                setTimeout(() => heart.remove(), duration * 1000);
+            }, 600);
+        }
+
+        // --- RUN GAME LOGIC ---
+        function checkName() {
+            const input = document.getElementById("name-input").value.trim().toLowerCase();
+            if (input === CORRECT_NAME) {
+                document.getElementById("screen-login").classList.remove("active");
+                document.getElementById("screen-game").classList.add("active");
+                loadQuestion();
+            } else {
+                document.getElementById("error-msg").innerText = "aw:( im tampo na.";
+            }
+        }
+
+        function loadQuestion() {
+            const currentQuestion = triviaQuestions[currentQuestionIndex];
+            document.getElementById("question-text").innerText = currentQuestion.question;
+            const container = document.getElementById("choices-container");
+            container.innerHTML = "";
+
+            currentQuestion.answers.forEach((answer, index) => {
+                const div = document.createElement("div");
+                div.className = "quiz-option";
+                div.innerText = answer;
+                div.onclick = () => handleAnswer(index);
+                container.appendChild(div);
+            });
+        }
+
+        function handleAnswer(selectedIndex) {
+            if (selectedIndex === triviaQuestions[currentQuestionIndex].correct) {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < triviaQuestions.length) {
+                    loadQuestion();
+                } else {
+                    document.getElementById("screen-game").classList.remove("active");
+                    document.getElementById("envelope-stage").style.display = "block";
+                }
+            } else {
+                alert("im so tampo bb:( why do you not remember");
+            }
+        }
+
+        // --- ENVELOPE FLIP & TYPEWRITER ---
+        function openEnvelope() {
+            document.getElementById("envelope-stage").classList.add("flipped");
+            spawnHearts(); // Start background love particles
+            setTimeout(startTypewriter, 1600); // Start typing once card finishes spinning
+        }
+
+        let charIndex = 0;
+        function startTypewriter() {
+            const destination = document.getElementById("typed-letter");
+            if (charIndex < LETTER_TEXT.length) {
+                destination.textContent += LETTER_TEXT.charAt(charIndex);
+                charIndex++;
+                const scrollArea = document.querySelector(".letter-scroll-area");
+                scrollArea.scrollTop = scrollArea.scrollHeight;
+                setTimeout(startTypewriter, 40);
+            } else {
+                destination.classList.remove("typing-cursor");
+            }
+        }
+    </script>
+</body>
+</html>
